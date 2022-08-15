@@ -4,7 +4,7 @@ import AudioAnalyzer from './AudioAnalyzer.js';
 
 const AudioPlayer = () => {
     const [audio, setAudio] = useState(null)
-    const audioDiv = useRef();
+    const audioDiv = useRef(null);
 
     const sampleTrack = 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/123941/Yodel_Sound_Effect.mp3';
   
@@ -23,12 +23,10 @@ const AudioPlayer = () => {
     }
 
     function loadAudio() {
-        audio.src = URL.createObjectURL('../public/wine_glass.mp3');
-        audio.load();
-        audio.play();
-        audio.style.display = "block";
-        setAudio(sampleTrack)
-
+        const audioStream = audioDiv.current.captureStream();
+        audioDiv.current.play();
+        console.log(audioStream)
+        setAudio(audioStream);
     }
   
     function toggleMicrophone() {
@@ -41,7 +39,7 @@ const AudioPlayer = () => {
     return (
         <div className="top-level-audio">
           <div className="controls">
-            <audio ref={audioDiv} controls></audio>
+            <audio ref={audioDiv} src={process.env.PUBLIC_URL + '/wine_glass.mp3'} controls></audio>
             <button onClick={loadAudio}> Load audio </button>
             <button onClick={toggleMicrophone}>
               {audio ? 'Stop microphone' : 'Get microphone input'}
@@ -53,21 +51,3 @@ const AudioPlayer = () => {
   }
 
 export default AudioPlayer;
-
-    // // Local File //
-    // var fbtn = document.getElementById("file");
-    // fbtn.addEventListener("click", function () {
-    //     var file = document.createElement("input");
-    //     file.type = "file";
-    //     file.accept = "audio/*";
-    //     file.click();
-    //     file.onchange = function () {
-    //         var files = this.files;
-
-    //         audio.src = URL.createObjectURL(files[0]);
-    //         audio.load();
-    //         audio.play();
-    //         audio.style.display = "block";
-    //         visualize(0, audio);
-    //     };
-    // });

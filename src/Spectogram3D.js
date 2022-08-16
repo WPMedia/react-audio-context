@@ -62,7 +62,7 @@ const lutString = [
 
 const Spectogram3D = (props) => {
 
-    const { audioData } = props;
+    const { audioData, tick } = props;
 
     const mount = useRef(null)
     const [isAnimating, setAnimating] = useState(true)

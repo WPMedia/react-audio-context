@@ -45,7 +45,11 @@ const Canvas = ( {draw, height, width, audioData} ) => {
 
 
   function AudioVisualizer(props) {
-    const { audioData } = props;
+    const { audioData, tick } = props;
+
+    useEffect(() => {
+        tick();
+    }, [audioData])
 
     return (
       <Canvas draw={draw} height={window.innerHeight} width={window.innerWidth} audioData={audioData} />

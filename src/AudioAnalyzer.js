@@ -27,7 +27,7 @@ const AudioAnalyzer = ({audio}) => {
         source.connect(analyzer.current);
         listen.connect(analyzer.current);
 
-        rafId.current = requestAnimationFrame(tick);
+        // rafId.current = requestAnimationFrame(tick);
 
         return() => {
               if (audioContext) {
@@ -40,7 +40,7 @@ const AudioAnalyzer = ({audio}) => {
         }
     }, [])
 
-    return <AudioVisualizer audioData={audioData} />;
+    return <AudioVisualizer audioData={audioData} tick={tick} />;
 
 }
 

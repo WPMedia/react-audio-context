@@ -18,15 +18,18 @@ const Canvas = ( {draw, height, width, audioData} ) => {
   }
 
   const draw = (context, width, height, audioData) => {
+
+    console.log(audioData)
+
     let x = 0;
     const sliceWidth = (width * 1.0) / audioData.length;
 
     // context.lineWidth = 2;
     // context.strokeStyle = '#000000';
-    context.fillStyle = "#000";
+    // context.fillStyle = "#000";
     context.lineWidth = 2;
-    context.strokeStyle = "#fff";
-    context.fillRect(0, 0, width, height);
+    context.strokeStyle = "#000";
+    context.clearRect(0, 0, width, height);
     // ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
     context.beginPath();
@@ -45,7 +48,7 @@ const Canvas = ( {draw, height, width, audioData} ) => {
     const { audioData } = props;
 
     return (
-      <Canvas draw={draw} height={window.innerWidth} width={window.innerHeight} audioData={audioData} />
+      <Canvas draw={draw} height={window.innerHeight} width={window.innerWidth} audioData={audioData} />
     );
   }
 

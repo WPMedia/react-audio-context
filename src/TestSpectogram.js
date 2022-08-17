@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, Component } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 
 import * as THREE from 'three';
 
@@ -69,11 +69,9 @@ return lut;
 
 
 const TestSpectogram = ({audio}) => {
-    const { useRef, useEffect, useState } = React
     const mount = useRef(null)
 
     let frequency_samples = 512;
-
     let time_samples = 1200;
     let n_vertices = (frequency_samples+1) * (time_samples+1);
     let xsegments = time_samples;
@@ -93,7 +91,7 @@ const TestSpectogram = ({audio}) => {
     const analyzer = useRef();
 
 
-useEffect(() => {
+    useEffect(() => {
         let frequency_samples = 512;
 
         let audioContext = new (window.AudioContext ||
@@ -102,121 +100,137 @@ useEffect(() => {
         analyzer.current = audioContext.createAnalyser();
         analyzer.current.fftSize = 4 * frequency_samples;  
         analyzer.current.smoothingTimeConstant = 0.5;
-        let data = new Uint8Array(analyzer.current.frequencyBinCount);
         
         let source = audioContext.createMediaStreamSource(audio);
         source.connect(analyzer.current);
-
-}, [])
-
-
-
-
-useEffect(() => {
-
-let width = mount.current.clientWidth
-let height = mount.current.clientHeight
-let frameId
-
-const scene = new THREE.Scene()
-const camera = new THREE.PerspectiveCamera( 27, window.innerWidth / window.innerHeight, 1, 1000 );
-const renderer = new THREE.WebGLRenderer({ antialias: true })
-let geometry = new THREE.BufferGeometry();
-
-
-camera.position.z = 64;
-
-renderer.setPixelRatio( window.devicePixelRatio);
-
-renderer.setSize(width, height)
-
-generateVertices(xsegments, xsegmentSize, xhalfSize, yhalfSize, ysegments, ysegmentSize, vertices, heightsArray);
-
-generateIndices(xsegments, ysegments, indices)
-
-let lut = generateColorLookup();
-
-heights = new Uint8Array(heightsArray);
-
-
-geometry.setIndex(indices);
-geometry.setAttribute( 'position', new THREE.Float32BufferAttribute(vertices, 3));
-geometry.setAttribute('displacement', new THREE.Uint8BufferAttribute(heights, 1));
-
-var uniforms = {
-    vLut: {type: "v3v", value: lut}
-}
-
-let material = new THREE.ShaderMaterial({
-    uniforms: uniforms,
-    vertexShader: vertexShader,
-    fragmentShader: fragmentShader
-});
-
-
-let mesh = new THREE.Mesh(geometry, material);
-scene.add(mesh);
-
-
-const update_geometry = () => {
-    if(analyzer.current && audio) {
-        let dataArray = new Uint8Array(analyzer.current.frequencyBinCount);
-        let output = analyzer.current.getByteFrequencyData(dataArray);
-        let start_val = frequency_samples+1;
-        let end_val = n_vertices -start_val;
-        heights.copyWithin(0, start_val, n_vertices + 1);
-        heights.set(dataArray, end_val-start_val);
-        mesh.geometry.setAttribute('displacement', new THREE.Uint8BufferAttribute(heights, 1));
-    }
-
-}
-
-const renderScene = () => {
-    update_geometry();
-    renderer.render(scene, camera)
-}
-
-const handleResize = () => {
-    width = mount.current.clientWidth
-    height = mount.current.clientHeight
-    renderer.setSize(width, height)
-    camera.aspect = width / height
-    camera.updateProjectionMatrix()
-    renderScene()
-}
-
-    const animate = () => {
-        renderScene()
-        frameId = window.requestAnimationFrame(animate)
-    }
-
-    const start = () => {
-        if (!frameId) {
-            frameId = requestAnimationFrame(animate)
-        }
-    }
-
-    const stop = () => {
-        cancelAnimationFrame(frameId)
-        frameId = null
-    }
-
-    mount.current.appendChild(renderer.domElement)
-    window.addEventListener('resize', handleResize)
-    start()
-
-    return () => {
-        stop()
-        window.removeEventListener('resize', handleResize)
-        mount.current.removeChild(renderer.domElement)
-
-        scene.remove(mesh)
-        geometry.dispose()
-        material.dispose()
-    }
     }, [])
 
-    return <div className="vis" ref={mount}  />
+
+
+
+    useEffect(() => {
+
+        const update_geometry = () => {
+            if(analyzer.current && audio) {
+
+                // console.log(indices, vertices, heights)
+                let dataArray = new Uint8Array(analyzer.current.frequencyBinCount);
+                let output = analyzer.current.getByteFrequencyData(dataArray);
+                let start_val = frequency_samples + 1;
+                let end_val = n_vertices -start_val;
+                heights.copyWithin(0, start_val, n_vertices + 1);
+                heights.set(dataArray, end_val-start_val);
+                mesh.geometry.setAttribute('displacement', new THREE.Uint8BufferAttribute(heights, 1));
+            }
+
+        }
+
+        const renderScene = () => {
+            update_geometry();
+            renderer.render(scene, camera)
+        }
+
+        const handleResize = () => {
+            width = mount.current.clientWidth
+            height = mount.current.clientHeight
+            renderer.setSize(width, height)
+            camera.aspect = width / height
+            camera.updateProjectionMatrix()
+            renderScene()
+        }
+
+        const animate = () => {
+            renderScene()
+            frameId = window.requestAnimationFrame(animate)
+        }
+
+        const start = () => {
+            if (!frameId) {
+                frameId = requestAnimationFrame(animate)
+            }
+        }
+
+        const stop = () => {
+            cancelAnimationFrame(frameId)
+            frameId = null
+        }
+
+        let width = mount.current.clientWidth
+        let height = mount.current.clientHeight
+        let frameId
+
+        const scene = new THREE.Scene()
+        const camera = new THREE.PerspectiveCamera( 27, window.innerWidth / window.innerHeight, 1, 1000 );
+        const renderer = new THREE.WebGLRenderer({ antialias: true })
+        let geometry = new THREE.BufferGeometry();
+
+        camera.position.z = 64;
+
+        renderer.setPixelRatio( window.devicePixelRatio);
+
+        renderer.setSize(width, height)
+
+        generateVertices(xsegments, xsegmentSize, xhalfSize, yhalfSize, ysegments, ysegmentSize, vertices, heightsArray);
+
+        generateIndices(xsegments, ysegments, indices)
+
+        let lut = generateColorLookup();
+
+        heights = new Uint8Array(heightsArray);
+
+        geometry.setIndex(indices);
+        geometry.setAttribute( 'position', new THREE.Float32BufferAttribute(vertices, 3));
+        geometry.setAttribute('displacement', new THREE.Uint8BufferAttribute(heights, 1));
+
+        geometry.computeVertexNormals();
+        
+        //  geometry.computeFaceNormals();
+
+        var uniforms = {
+            vLut: {type: "v3v", value: lut}
+        }
+
+        let material = new THREE.ShaderMaterial({
+            uniforms: uniforms,
+            vertexShader: vertexShader,
+            fragmentShader: fragmentShader
+        });
+
+
+        let mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+
+        mount.current.appendChild(renderer.domElement);
+
+
+        // mesh.geometry.computeFaceNormals();
+        // mesh.geometry.computeVertexNormals();
+
+
+        
+
+
+        console.log(geometry)
+
+
+
+        window.addEventListener('resize', handleResize)
+        animate()
+
+
+
+        return () => {
+            stop()
+            window.removeEventListener('resize', handleResize)
+            mount.current.removeChild(renderer.domElement)
+
+            scene.remove(mesh)
+            geometry.dispose()
+            material.dispose()
+        }
+        }, [audio])
+
+    return <div className="vis" ref={mount} />
 
 }
 

@@ -105,7 +105,7 @@ const Spectogram3D = (props) => {
       let frameId
   
       const scene = new THREE.Scene()
-      const camera = new THREE.PerspectiveCamera( 27, window.innerWidth / window.innerHeight, 1, 1000 );
+      const camera = new THREE.PerspectiveCamera( 27, 800 / 800, 1, 1000 );
       const renderer = new THREE.WebGLRenderer({ antialias: true })        
       let geometry = new THREE.BufferGeometry();
 

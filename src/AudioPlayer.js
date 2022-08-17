@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, Component } from 'react'
 import AudioAnalyzer from './AudioAnalyzer.js';
-
+import TestSpectogram from './TestSpectogram.js';
 
 const AudioPlayer = () => {
     const [audio, setAudio] = useState(null)
@@ -28,13 +28,13 @@ const AudioPlayer = () => {
     return (
         <div className="top-level-audio">
           <div className="controls">
-            <audio ref={audioDiv} src={process.env.PUBLIC_URL + '/wine_glass.mp3'} controls></audio>
+            <audio ref={audioDiv} src={process.env.PUBLIC_URL + '/stream.mp3'} controls></audio>
             <button onClick={loadAudio}> Load audio </button>
             <button onClick={toggleAudio}>
               {audio ? 'Stop microphone' : 'Get microphone input'}
             </button>
           </div>
-          {audio ? <AudioAnalyzer audio={audio} /> : ''}
+          {audio ? <TestSpectogram audio={audio} /> : ''}
         </div>
       );
   }

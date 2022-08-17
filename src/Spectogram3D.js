@@ -58,18 +58,27 @@ const lutString = [
   }
 
 
+  const generateVertices = (xsegments, xsegmentSize, xhalfSize, yhalfSize, ysegments, ysegmentSize, vertices, heightsArray) => {
+    // generate vertices and color data for a simple grid geometry
+    for (let i = 0; i <= xsegments; i ++ ) {
+      let x = ( i * xsegmentSize ) - xhalfSize;
+      for ( let j = 0; j <= ysegments; j ++ ) {
+        let y = (j * ysegmentSize) - yhalfSize;
+        vertices.push( x, y, 0);
+        heightsArray.push(0);
+      }
+    }
+  }
+
+
 
 
 const Spectogram3D = (props) => {
 
-    const { audioData, tick } = props;
-
+    const { audioData, tick, audioAnalyzer } = props;
     const mount = useRef(null)
-    const [isAnimating, setAnimating] = useState(true)
-    const controls = useRef(null)
 
-
-    let requestId;
+    const rafId = useRef(null);
     let frequency_samples = 512;
 
     let time_samples = 1200;
@@ -86,6 +95,8 @@ const Spectogram3D = (props) => {
     const vertices = [];
     const indices = [];
     const heightsArray = []
+    const heights = useRef(null);
+    const mesh = useRef(null)
 
     
     useEffect(() => {
@@ -95,50 +106,35 @@ const Spectogram3D = (props) => {
   
       const scene = new THREE.Scene()
       const camera = new THREE.PerspectiveCamera( 27, window.innerWidth / window.innerHeight, 1, 1000 );
-    //   const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000)
-      const renderer = new THREE.WebGLRenderer({ antialias: true })
-    //   const geometry = new THREE.BoxGeometry(1, 1, 1)
-        
+      const renderer = new THREE.WebGLRenderer({ antialias: true })        
       let geometry = new THREE.BufferGeometry();
 
     //   const material = new THREE.MeshBasicMaterial({ color: 0xff00ff })
     //   const cube = new THREE.Mesh(geometry, material)
   
       camera.position.z = 64
-    //   scene.add(cube)
-    //   renderer.setClearColor('#000000')
+
       renderer.setPixelRatio( window.devicePixelRatio);
 
       renderer.setSize(width, height)
 
     //   console.log('before generate Vertices', heights)
 
-    //   const generateVertices = (xsegments, xsegmentSize, xhalfSize, yhalfSize, ysegments, ysegmentSize, vertices) => {
-        // generate vertices and color data for a simple grid geometry
-        for (let i = 0; i <= xsegments; i ++ ) {
-          let x = ( i * xsegmentSize ) - xhalfSize;
-          for ( let j = 0; j <= ysegments; j ++ ) {
-            let y = (j * ysegmentSize) - yhalfSize;
-            vertices.push( x, y, 0);
-            heightsArray.push(0);
-          }
-        }
-    //   }
 
-    //   generateVertices(xsegments, xsegmentSize, xhalfSize, yhalfSize, ysegments, ysegmentSize, vertices);
+      generateVertices(xsegments, xsegmentSize, xhalfSize, yhalfSize, ysegments, ysegmentSize, vertices, heightsArray);
 
       generateIndices(xsegments, ysegments, indices)
 
+    //   console.log('after generating vertices and indices', vertices, indices)
+
       let lut = generateColorLookup();
 
-      const heights = new Uint8Array(heightsArray);
+      heights.current = new Uint8Array(heightsArray);
 
 
         geometry.setIndex(indices);
-        geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3));
-        geometry.setAttribute('displacement', new THREE.Uint8BufferAttribute(heights, 1));
-
-    console.log(lut)
+        geometry.setAttribute( 'position', new THREE.Float32BufferAttribute(vertices, 3));
+        geometry.setAttribute('displacement', new THREE.Uint8BufferAttribute(heights.current, 1));
 
     var uniforms = {
       vLut: {type: "v3v", value: lut}
@@ -151,8 +147,8 @@ const Spectogram3D = (props) => {
     });
 
 
-    let mesh = new THREE.Mesh( geometry, material );
-    scene.add( mesh );
+    mesh.current = new THREE.Mesh(geometry, material);
+    scene.add(mesh.current);
 
   
       const renderScene = () => {
@@ -169,57 +165,63 @@ const Spectogram3D = (props) => {
         renderScene()
       }
       
-    //   const start = () => {
-    //     requestId = window.requestAnimationFrame(start)
 
-    //     renderScene()
-    //   }
-
-  
-    //   const stop = () => {
-    //     cancelAnimationFrame(requestId)
-    //     requestId = null
-    //   }
-
-      const update_geometry = () => {
-        //   console.log('updated geometry', audioData)
-
-        console.log('getting called?')
-
-        let start_val = frequency_samples+1;
-        let end_val = n_vertices -start_val;
-        heights.copyWithin(0, start_val, n_vertices+1);
-        
-        heights.set(audioData, end_val-start_val);
-        mesh.geometry.setAttribute('displacement', new THREE.Uint8BufferAttribute(heights, 1));
-    
-    }
   
       mount.current.appendChild(renderer.domElement)
       window.addEventListener('resize', handleResize)
       renderScene();
-      update_geometry();
-  
-    //   controls.current = { start, stop }
-      
+ 
+        
       return () => {
         // stop()
         // window.removeEventListener('resize', handleResize)
         mount.current.removeChild(renderer.domElement)
   
-        scene.remove(mesh)
+        scene.remove(mesh.current)
         geometry.dispose()
         material.dispose()
       }
-    }, [audioData])
+    }, [])
+
+
+
+    const update_geometry = () => {
+        // if(!audioAnalyzer) return;
+
+        console.log('updated geometry: audio analyzer? ', audioAnalyzer)
+
+        // tick();
+
+        // console.log('getting called?')
+
+        let dataArray = new Uint8Array(audioAnalyzer.frequencyBinCount);
+        audioAnalyzer.getByteTimeDomainData(dataArray);
+        
+
+
+        let start_val = frequency_samples+1;
+        let end_val = n_vertices -start_val;
+        heights.current.copyWithin(0, start_val, n_vertices+1);
+        
+        heights.current.set(audioData, end_val-start_val);
+        mesh.current.geometry.setAttribute('displacement', new THREE.Uint8BufferAttribute(heights.current, 1));
+
+        rafId.current = requestAnimationFrame(update_geometry);
+    
+    }
+
+    useEffect(() => {
+        rafId.current = requestAnimationFrame(update_geometry);
+
+        return() => {
+           cancelAnimationFrame(rafId.current);
+           audioAnalyzer.disconnect();
+        }
+
+    }, [audioAnalyzer])
+
+
   
-    // useEffect(() => {
-    //   if (isAnimating) {
-    //     controls.current.start()
-    //   } else {
-    //     controls.current.stop()
-    //   }
-    // }, [isAnimating])
     
     return <div className="vis" ref={mount} />
   }

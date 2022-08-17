@@ -26,11 +26,11 @@ const Canvas = ( {draw, height, width, audioData} ) => {
 
     // context.lineWidth = 2;
     // context.strokeStyle = '#000000';
-    // context.fillStyle = "#000";
-    context.lineWidth = 2;
-    context.strokeStyle = "#000";
-    context.clearRect(0, 0, width, height);
-    // ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    context.fillStyle = "#000";
+    context.lineWidth = 10;
+    context.strokeStyle = "purple";
+    // context.clearRect(0, 0, width, height);
+    context.fillRect(0, 0, width, height);
 
     context.beginPath();
     context.moveTo(0, height / 2);

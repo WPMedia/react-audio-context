@@ -13,9 +13,14 @@ const AudioPlayer = () => {
 
     function loadAudio() {
         const audioStream = audioDiv.current.captureStream();
-        audioDiv.current.play();
         console.log(audioStream)
         setAudio(audioStream);
+
+        setTimeout(() => {
+          audioDiv.current.play();
+
+        }, 3000)
+
     }
   
     function toggleAudio() {
@@ -25,13 +30,14 @@ const AudioPlayer = () => {
         loadAudio();
       }
     }
+
+
     return (
         <div className="top-level-audio">
           <div className="controls">
-            <audio ref={audioDiv} src={process.env.PUBLIC_URL + '/stream.mp3'} controls></audio>
-            <button onClick={loadAudio}> Load audio </button>
+            <audio ref={audioDiv} src={process.env.PUBLIC_URL + '/marble_audio.mp3'} controls></audio>
             <button onClick={toggleAudio}>
-              {audio ? 'Stop microphone' : 'Get microphone input'}
+              click
             </button>
           </div>
           {audio ? <TestSpectogram audio={audio} /> : ''}

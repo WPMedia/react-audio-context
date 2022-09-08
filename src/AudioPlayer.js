@@ -18,8 +18,7 @@ const AudioPlayer = () => {
 
         setTimeout(() => {
           audioDiv.current.play();
-
-        }, 3000)
+        }, 4000)
 
     }
   
@@ -35,7 +34,7 @@ const AudioPlayer = () => {
     return (
         <div className="top-level-audio">
           <div className="controls">
-            <audio ref={audioDiv} src={process.env.PUBLIC_URL + '/marble_audio.mp3'} controls></audio>
+            <audio ref={audioDiv} src={process.env.PUBLIC_URL + '/bird-song-looped.mp3'} controls></audio>
             <button onClick={toggleAudio}>
               click
             </button>

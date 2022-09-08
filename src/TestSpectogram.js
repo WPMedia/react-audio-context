@@ -8,7 +8,7 @@ const TestSpectogram = ({audio}) => {
     const analyzer = useRef();
 
     const frequency_samples = 512;
-    const time_samples = 1200;
+    const time_samples = 800;
     const n_vertices = (frequency_samples+1) * (time_samples+1);
     const xsegments = time_samples;
     const ysegments = frequency_samples;
@@ -89,8 +89,10 @@ const TestSpectogram = ({audio}) => {
         let frameId
 
         const scene = new THREE.Scene()
-        const camera = new THREE.PerspectiveCamera( 27, window.innerWidth / window.innerHeight, 1, 1000 );
-        const renderer = new THREE.WebGLRenderer({ antialias: true })
+        const camera = new THREE.PerspectiveCamera( 27, 10/3, 1, 1000 );
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+        renderer.setClearColor( 0xffffff, 0);
+
         let geometry = new THREE.BufferGeometry();
 
         camera.position.z = 64;
@@ -121,7 +123,11 @@ const TestSpectogram = ({audio}) => {
         let material = new THREE.ShaderMaterial({
             uniforms: uniforms,
             vertexShader: vertexShader,
-            fragmentShader: fragmentShader
+            fragmentShader: fragmentShader,
+            // blending: THREE.NormalBlending,
+            transparent: true
+
+            // blending: THREE.AdditiveBlending
         });
 
         let mesh = new THREE.Mesh(geometry, material);
@@ -144,7 +150,12 @@ const TestSpectogram = ({audio}) => {
         }
         }, [])
 
-    return <div className="vis" ref={mount} />
+        if(audio) {
+            return <div className="vis" ref={mount}/>
+        } else {
+            return null; 
+        }
+
 
 }
 

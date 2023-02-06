@@ -4,7 +4,7 @@ let colormap = require('colormap')
 const fs = require('fs');
 
 let colors = colormap({
-    colormap: 'YIGnBu',
+    colormap: 'inferno',
     nshades: 256,
     format: 'float',
     alpha: 1
@@ -12,7 +12,7 @@ let colors = colormap({
 
 console.log(colors);
 
-const file = fs.createWriteStream('ello.txt');
+const file = fs.createWriteStream('inferno.txt');
 
 file.on('error', (err) => {
   console.log('error!!:', err)

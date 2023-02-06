@@ -29,6 +29,7 @@ const AudioPlayer = () => {
 		}
 	}
 
+<<<<<<< HEAD
 	return (
 		<div className='top-level-audio'>
 			<div className='controls'>
@@ -43,5 +44,19 @@ const AudioPlayer = () => {
 		</div>
 	);
 };
+=======
+    return (
+        <div className="top-level-audio">
+          <div className="controls">
+            <audio ref={audioDiv} src={process.env.PUBLIC_URL + '/mike-20-seconds.mp3'} controls></audio>
+            <button onClick={toggleAudio}>
+              click
+            </button>
+          </div>
+          {audio ? <TestSpectogram audio={audio} /> : ''}
+        </div>
+      );
+  }
+>>>>>>> 66072ed (add style files)
 
 export default AudioPlayer;

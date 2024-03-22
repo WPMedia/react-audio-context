@@ -92,7 +92,10 @@ const TestSpectogram = ({ audio }) => {
 		let height = mount.current.clientHeight;
 		let frameId;
 
+		const color2 = new THREE.Color(0xff0000);
+
 		const scene = new THREE.Scene();
+
 		const camera = new THREE.PerspectiveCamera(27, 10 / 3, 1, 1000);
 		const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 		renderer.setClearColor(0xffffff, 0);
@@ -143,14 +146,17 @@ const TestSpectogram = ({ audio }) => {
 			uniforms: uniforms,
 			vertexShader: vertexShader,
 			fragmentShader: fragmentShader,
-			// blending: THREE.NormalBlending,
 			transparent: true,
 
-			// blending: THREE.AdditiveBlending
+			// blending: THREE.AdditiveBlending,
 		});
 
 		let mesh = new THREE.Mesh(geometry, material);
 		scene.add(mesh);
+
+		material.background = new THREE.Color(0xf0f0f0); // UPDATED
+
+		mesh.background = new THREE.Color(0xf0f0f0); // UPDATED
 
 		mount.current.appendChild(renderer.domElement);
 

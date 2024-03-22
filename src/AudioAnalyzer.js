@@ -14,7 +14,7 @@ const AudioAnalyzer = ({ audio }) => {
 			// analyzer.current.getByteTimeDomainData(dataArray);
 			// setAudioData(dataArray);
 			setAudioAnalyzer(analyzer.current);
-			// rafId.current = requestAnimationFrame(tick);
+			rafId.current = requestAnimationFrame(tick);
 		}
 	};
 
@@ -31,9 +31,9 @@ const AudioAnalyzer = ({ audio }) => {
 		// setAudioData(dataArray);
 		setAudioAnalyzer(analyzer.current);
 
-		tick();
+		// tick();
 
-		// rafId.current = requestAnimationFrame(tick);
+		rafId.current = requestAnimationFrame(tick);
 
 		return () => {
 			if (audioContext) {

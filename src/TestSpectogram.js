@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, memo } from 'react';
 import {
 	fragmentShader,
 	vertexShader,
@@ -11,6 +11,7 @@ import * as THREE from 'three';
 const TestSpectogram = ({ audio }) => {
 	const mount = useRef(null);
 	const analyzer = useRef();
+	// const [isPaused, setIsPaused] = useState(true);
 
 	const frequency_samples = 512;
 	const time_samples = 800;
@@ -30,20 +31,22 @@ const TestSpectogram = ({ audio }) => {
 	const heightsArray = [];
 
 	useEffect(() => {
+		console.log('audio', audio);
 		let frequency_samples = 512;
 
 		let audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
 		analyzer.current = audioContext.createAnalyser();
+		analyzer.current.backgroundColor = [0.25, 0.12, 0.47, 1.0];
 		analyzer.current.fftSize = 4 * frequency_samples;
 		analyzer.current.smoothingTimeConstant = 0.5;
 
 		let source = audioContext.createMediaStreamSource(audio);
 		source.connect(analyzer.current);
-	}, []);
+	}, [audio]);
 
 	useEffect(() => {
-		const update_geometry = () => {
+		const updateGeometry = () => {
 			if (analyzer.current) {
 				let dataArray = new Uint8Array(analyzer.current.frequencyBinCount);
 				analyzer.current.getByteFrequencyData(dataArray);
@@ -59,7 +62,7 @@ const TestSpectogram = ({ audio }) => {
 		};
 
 		const renderScene = () => {
-			update_geometry();
+			updateGeometry();
 			renderer.render(scene, camera);
 		};
 
@@ -96,10 +99,17 @@ const TestSpectogram = ({ audio }) => {
 
 		const scene = new THREE.Scene();
 
+		let backgroundColor = [0.25, 0.12, 0.47, 1.0];
+
 		const camera = new THREE.PerspectiveCamera(27, 10 / 3, 1, 1000);
 		const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-		renderer.setClearColor(0xffffff, 0);
-
+		// renderer.setClearColor(0xffffff, 0);
+		renderer.clearColor(
+			backgroundColor[0],
+			backgroundColor[1],
+			backgroundColor[2],
+			backgroundColor[3]
+		);
 		let geometry = new THREE.BufferGeometry();
 
 		camera.position.z = 64;
@@ -136,7 +146,7 @@ const TestSpectogram = ({ audio }) => {
 		);
 
 		geometry.computeVertexNormals();
-		//  geometry.computeFaceNormals();
+		// geometry.computeFaceNormals();
 
 		var uniforms = {
 			vLut: { type: 'v3v', value: lut },
@@ -172,13 +182,30 @@ const TestSpectogram = ({ audio }) => {
 			geometry.dispose();
 			material.dispose();
 		};
-	}, []);
+	}, [
+		heightsArray,
+		indices,
+		n_vertices,
+		vertices,
+		xhalfSize,
+		xsegmentSize,
+		xsegments,
+		yhalfSize,
+		ysegmentSize,
+		ysegments,
+	]);
 
 	if (audio) {
-		return <div className='vis' ref={mount} />;
+		return (
+			<div
+				className='vis'
+				style={{ width: '100vw', height: '100vh' }}
+				ref={mount}
+			/>
+		);
 	} else {
 		return null;
 	}
 };
 
-export default TestSpectogram;
+export default memo(TestSpectogram);

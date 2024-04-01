@@ -15,6 +15,10 @@ const AudioPlayer = () => {
 	}, []);
 
 	// useEffect(() => {
+	// 	audioDiv.current.currentTime = 30;
+	// });
+
+	// useEffect(() => {
 	// 	if (!audio) return;
 	// 	if (audio.duration > 0 && !audio.paused) {
 	// 		//Its playing...do your job
@@ -88,7 +92,7 @@ const AudioPlayer = () => {
 					pause
 				</button>
 			</div>
-			{audio ? <TestSpectogram audio={audio} /> : ''}
+			{audio && <TestSpectogram paused={isPaused} audio={audio} />}
 		</div>
 	);
 };

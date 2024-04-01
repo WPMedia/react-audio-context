@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 
-export const fragmentShader = `varying vec3 vColor;
+export const fragmentShader = `
+	varying vec3 vColor;
     void main()
     {
         gl_FragColor = vec4(vColor, 1);

@@ -6,13 +6,7 @@ import React, {
 	useMemo,
 	useCallback,
 } from 'react';
-import {
-	fragmentShader,
-	vertexShader,
-	generateIndices,
-	generateVertices,
-	generateColorLookup,
-} from './SpectogramUtils';
+import { generateColorLookup } from './SpectogramUtils';
 import * as THREE from 'three';
 
 import { Canvas, extend, useFrame, useLoader } from '@react-three/fiber';
@@ -48,58 +42,43 @@ const SpectrogramShaderMaterial = shaderMaterial(
     }`
 );
 
-const WaveShaderMaterial = shaderMaterial(
-	// uniforms
-	{
-		uTime: 0,
-		uColor: new THREE.Color(1.0, 0.0, 0.0),
-		uTexture: new THREE.Texture(),
-	},
-	// vertex shader
-	glsl` 
-	    //varying type allows us to send data from vertex -> fragment shader
-		precision mediump float;
-		varying float vWave;
-		varying vec2 vUv;
-		uniform float uTime;
-
-		#pragma glslify: snoise3 = require(glsl-noise/simplex/3d);
-
-		void main() {
-			vUv = uv;
-
-			vec3 pos = position;
-			float noiseFreq = 2.0;
-			float noiseAmp = 1.0;
-			vec3 noisePos = vec3(pos.x * noiseFreq + uTime, pos.y, pos.z);
-			pos.z += snoise3(noisePos) * noiseAmp;
-			vWave = pos.z;
-
-			gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-		}
-	`,
-	// fragment shader
-	glsl`
-	precision mediump float;
-
-	uniform vec3 uColor;
-	uniform float uTime;
-	// uniform sampler2D uTexture;
-	varying vec2 vUv;
-	varying float vWave;
-
-	void main() {
-		float wave = vWave * .3;
-		// vec3 texture = texture2D(uTexture, vUv + wave).rgb;
-		gl_FragColor = vec4(sin(vUv.y + uTime) * uColor, 1.0);
-		// gl_FragColor = vec4(texture * uColor, vUv + wave);
-		// gl_FragColor = vec4(texture, 1.0);
-
-	}	
-	`
-);
-
 extend({ SpectrogramShaderMaterial });
+
+const generateIndices = (xsegments, ysegments, indices) => {
+	// generate indices (data for element array buffer)
+	for (let i = 0; i < xsegments; i++) {
+		for (let j = 0; j < ysegments; j++) {
+			let a = i * (ysegments + 1) + (j + 1);
+			let b = i * (ysegments + 1) + j;
+			let c = (i + 1) * (ysegments + 1) + j;
+			let d = (i + 1) * (ysegments + 1) + (j + 1);
+			// generate two faces (triangles) per iteration
+			indices.push(a, b, d); // face one
+			indices.push(b, c, d); // face two
+		}
+	}
+};
+
+const generateVertices = (
+	xsegments,
+	xsegmentSize,
+	xhalfSize,
+	yhalfSize,
+	ysegments,
+	ysegmentSize,
+	vertices,
+	heightsArray
+) => {
+	// generate vertices and color data for a simple grid geometry
+	for (let i = 0; i <= xsegments; i++) {
+		let x = i * xsegmentSize - xhalfSize;
+		for (let j = 0; j <= ysegments; j++) {
+			let y = j * ysegmentSize - yhalfSize;
+			vertices.push(x, y, 0);
+			heightsArray.push(0);
+		}
+	}
+};
 
 const TestSpectogram = ({ audio, paused }) => {
 	return (
@@ -128,7 +107,7 @@ const Wave = ({ paused, audio }) => {
 	// const [isPaused, setIsPaused] = useState(true);
 
 	const frequency_samples = 512;
-	const time_samples = 400;
+	const time_samples = 800;
 	const n_vertices = (frequency_samples + 1) * (time_samples + 1);
 	const xsegments = time_samples;
 	const ysegments = frequency_samples;
@@ -189,20 +168,22 @@ const Wave = ({ paused, audio }) => {
 		if (!paused) {
 			let dataArray = new Uint8Array(analyzer.current.frequencyBinCount);
 			analyzer.current.getByteFrequencyData(dataArray);
-			let start_val = frequency_samples + 1;
-			let end_val = n_vertices - start_val;
+			// let start_val = frequency_samples + 1;
+			// let end_val = n_vertices - start_val;
+
+			let start_val = 513;
+			let end_val = 410400;
 
 			console.log('data array', dataArray, start_val, end_val);
 
-			// heights.current.copyWithin(0, start_val, n_vertices + 1);
-			// heights.current.set(dataArray, end_val - start_val);
-			return (ref.current.uTime = clock.getElapsedTime());
+			heights.current.copyWithin(0, start_val, n_vertices + 1);
+			heights.current.set(dataArray);
+			ref.current.uTime = clock.getElapsedTime();
 		}
 	});
 
 	const geometry = useCallback(() => {
 		let g = new THREE.BufferGeometry();
-		g.setIndex(indices);
 
 		g.setAttribute(
 			'displacement',
@@ -226,99 +207,80 @@ const Wave = ({ paused, audio }) => {
 
 	return (
 		<mesh geometry={geometry}>
-			<planeBufferGeometry args={[0.4, 0.6, 200, 200]} />
+			{/* <planeBufferGeometry args={[0.4, 0.6, 200, 200]} /> */}
 			<spectrogramShaderMaterial ref={ref} vColor={(1.0, 0.0, 0.0)} />
 			{/* <waveShaderMaterial ref={ref} uColor={'purple'} /> */}
 		</mesh>
 	);
 };
 
-const V = ({ audio }) => {
-	const mount = useRef(null);
-	const analyzer = useRef();
-	// const [isPaused, setIsPaused] = useState(true);
+const frequency_samples = 512;
+const time_samples = 800;
+const n_vertices = (frequency_samples + 1) * (time_samples + 1);
+const xsegments = time_samples;
+const ysegments = frequency_samples;
+const xsize = 40;
 
-	const frequency_samples = 512;
-	const time_samples = 800;
-	const n_vertices = (frequency_samples + 1) * (time_samples + 1);
-	const xsegments = time_samples;
-	const ysegments = frequency_samples;
-	const xsize = 40;
+const ysize = 20;
+const xhalfSize = xsize / 2;
+const yhalfSize = ysize / 2;
+const xsegmentSize = xsize / xsegments;
+const ysegmentSize = ysize / ysegments;
 
-	const ysize = 20;
-	const xhalfSize = xsize / 2;
-	const yhalfSize = ysize / 2;
-	const xsegmentSize = xsize / xsegments;
-	const ysegmentSize = ysize / ysegments;
-
-	const vertices = [];
-	const indices = [];
-	const heightsArray = [];
-	let heights = [];
-
-	useEffect(() => {
-		let frequency_samples = 512;
-
-		let audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-		analyzer.current = audioContext.createAnalyser();
-		analyzer.current.backgroundColor = [0.25, 0.12, 0.47, 1.0];
-		analyzer.current.fftSize = 4 * frequency_samples;
-		analyzer.current.smoothingTimeConstant = 0.5;
-
-		let source = audioContext.createMediaStreamSource(audio);
-		source.connect(analyzer.current);
-	}, [audio]);
-
-	let width = mount.current.clientWidth;
-	let height = mount.current.clientHeight;
-	let frameId;
-
-	const color2 = new THREE.Color(0xff0000);
-
-	let backgroundColor = [0.25, 0.12, 0.47, 1.0];
-
-	// renderer.setClearColor(0xffffff, 0);
-
-	generateVertices(
-		xsegments,
-		xsegmentSize,
-		xhalfSize,
-		yhalfSize,
-		ysegments,
-		ysegmentSize,
-		vertices,
-		heights
-	);
-
-	useEffect(() => {
-		if (analyzer.current) {
-			let dataArray = new Uint8Array(analyzer.current.frequencyBinCount);
-			analyzer.current.getByteFrequencyData(dataArray);
-			let start_val = frequency_samples + 1;
-			let end_val = n_vertices - start_val;
-			heights.copyWithin(0, start_val, n_vertices + 1);
-			heights.set(dataArray, end_val - start_val);
-			// mesh.geometry.setAttribute(
-			// 	'displacement',
-			// 	new THREE.Uint8BufferAttribute(heights, 1)
-			// );
+const MeshAnim = ({ position, rotation, grid: { width, height, sep } }) => {
+	let { vertices, heightsArray } = useMemo(() => {
+		let vertices = [];
+		let heightsArray = [];
+		for (let i = 0; i <= xsegments; i++) {
+			let x = i * xsegmentSize - xhalfSize;
+			for (let j = 0; j <= ysegments; j++) {
+				let y = j * ysegmentSize - yhalfSize;
+				vertices.push(x, y, 0);
+				heightsArray.push(0);
+			}
 		}
+
+		return {
+			vertices: new THREE.Float32BufferAttribute(vertices),
+			heightsArray: new Uint8Array(heightsArray),
+		};
 	}, []);
 
-	generateIndices(xsegments, ysegments, indices);
+	let indices = useMemo(() => {
+		let indices = [];
+		for (let i = 0; i < xsegments; i++) {
+			for (let j = 0; j < ysegments; j++) {
+				let a = i * (ysegments + 1) + (j + 1);
+				let b = i * (ysegments + 1) + j;
+				let c = (i + 1) * (ysegments + 1) + j;
+				let d = (i + 1) * (ysegments + 1) + (j + 1);
+				// generate two faces (triangles) per iteration
+				indices.push(a, b, d); // face one
+				indices.push(b, c, d); // face two
+			}
+		}
 
-	if (audio) {
-		return (
-			<div
-				className='vis'
-				style={{ width: '100vw', height: '100vh' }}
-				ref={mount}
-			/>
-		);
-	} else {
-		return null;
-	}
+		return new Uint16Array(indices);
+	}, []);
+
+	return (
+		<mesh>
+			<bufferGeometry>
+				<bufferAttribute
+					attachObject={['attributes', 'position']}
+					array={vertices}
+					itemSize={3}
+					count={vertices.length / 3}
+				/>
+				<bufferAttribute
+					attachObject={['attributes', 'displacement']}
+					array={heightsArray}
+					itemSize={3}
+					count={heightsArray.length / 3}
+				/>
+			</bufferGeometry>
+		</mesh>
+	);
 };
 
 export default TestSpectogram;
